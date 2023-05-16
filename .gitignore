@@ -1,4 +1,4 @@
 node_modules/
-databases/
+databases/shui.sqlite
 
 .env
