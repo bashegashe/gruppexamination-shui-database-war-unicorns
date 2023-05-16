@@ -23,12 +23,12 @@ function createTable(db) {
   CREATE TABLE IF NOT EXISTS channels (
     channelId VARCHAR(36) PRIMARY KEY,
     ownerId INTEGER NOT NULL,
-    channelName VARCHAR(50) NOT NULL,
+    channelName VARCHAR(50) NOT NULL UNIQUE,
     FOREIGN KEY (ownerId) REFERENCES users(userId) ON DELETE CASCADE
   );
 
   CREATE TABLE IF NOT EXISTS messages (
-    messageId INTEGER PRIMARY KEY AUTOINCREMENT,
+    messageId VARCHAR(36) PRIMARY KEY,
     userId INTEGER NOT NULL,
     message TEXT NOT NULL,
     sentDate DATETIME NOT NULL,
