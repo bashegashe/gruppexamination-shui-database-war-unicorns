@@ -5,6 +5,8 @@ import useTry from '../utils/useTry.js';
 import UserModel from '../models/user.js';
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
 import checkAuth from '../middleware/checkAuth.js';
+import { subscribeToChannel } from '../models/subscribe.js';
+import ChannelModel from '../models/channel.js';
 
 const router = express.Router();
 
@@ -56,9 +58,33 @@ router.get('/logout', checkAuth, (req, res) => {
   res.json({ success: true });
 });
 
-// Subscribe to a channel
-router.post('/:userId/subscriptions/:channelId', checkAuth, useTry(async (req, res) => {
+router.get('/status', checkAuth, useTry(async (req, res) => {
+  const user = await UserModel.getUserById(req.userId);
 
+  res.json({ success: true, userId: req.userId, username: user.username });
+}));
+
+// Subscribe to a channel
+router.post('/subscriptions/:channelName', checkAuth, useTry(async (req, res) => {
+  const { channelName } = req.params;
+
+  const channelId = await ChannelModel.getChannelIdByName(channelName);
+
+  if (!channelId) {
+    return res.json({ success: false, error: 'Channel not found!' });
+  }
+
+  try {
+    await subscribeToChannel(req.userId, channelId);
+  } catch (err) {
+    if (err.code === 'SQLITE_CONSTRAINT') {
+      return res.json({ success: false, error: 'You are already subscribed to this channel!' });
+    }
+
+    throw err;
+  }
+
+  res.json({ success: true, message: `You have been subscribed to ${channelName}` });
 }));
 
 export default router;

@@ -35,7 +35,26 @@ function getUserByUsername(username) {
   });
 }
 
+function getUserById(userId) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+    SELECT username
+    FROM users
+    WHERE userId = ?;
+    `;
+
+    db.get(sql, [userId], (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(row);
+      }
+    });
+  });
+}
+
 export default {
   createUser,
   getUserByUsername,
+  getUserById,
 };
