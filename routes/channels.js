@@ -19,10 +19,15 @@ router.post('/', useTry(async (req, res) => {
     return res.json({ success: false, error: 'Channel name is required!' });
   }
 
-  const channelId = await ChannelModel.createChannel(req.userId, channelName);
-  await subscribeToChannel(req.userId, channelId);
+  const channel = await ChannelModel.createChannel(req.userId, channelName);
+  await subscribeToChannel(req.userId, channel.channelId);
 
-  res.json({ success: true, channelId, message: "You have been auto-subscribed to this channel" });
+  res.json({
+    success: true,
+    channelId: channel.channelId,
+    channelName: channel.channelName,
+    message: "You have been auto-subscribed to this channel"
+  });
 }));
 
 // Post message to a channel

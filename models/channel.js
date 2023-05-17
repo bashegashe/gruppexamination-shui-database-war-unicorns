@@ -15,7 +15,7 @@ function createChannel(ownerId, channelName) {
       if (err) {
         reject(err);
       } else {
-        resolve(channelId);
+        resolve({ channelId, channelName });
       }
     });
   });
