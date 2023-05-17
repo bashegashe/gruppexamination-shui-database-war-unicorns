@@ -7,6 +7,7 @@ import { hashPassword, comparePassword } from '../utils/bcrypt.js';
 import checkAuth from '../middleware/checkAuth.js';
 import { subscribeToChannel } from '../models/subscribe.js';
 import ChannelModel from '../models/channel.js';
+import MessageModel from '../models/message.js';
 
 const router = express.Router();
 
@@ -85,6 +86,20 @@ router.post('/subscriptions/:channelName', checkAuth, useTry(async (req, res) =>
   }
 
   res.json({ success: true, message: `You have been subscribed to ${channelName}` });
+}));
+
+router.get('/messages', checkAuth, useTry(async (req, res) => {
+  const { sort } = req.query;
+
+  if (sort != 'oldest' && sort != 'newest') {
+    return res.json({ success: false, error: 'Invalid sort parameter!' });
+  }
+
+  const order = sort === 'oldest' ? 'ASC' : 'DESC';
+
+  const messages = await MessageModel.getAllUserMessages(req.userId, order);
+
+  res.json({ success: true, messages });
 }));
 
 export default router;
