@@ -6,6 +6,8 @@ import MessageModel from '../models/message.js';
 import checkAuth from '../middleware/checkAuth.js';
 import { subscribeToChannel } from '../models/subscribe.js';
 import uuid from 'uuid-random';
+import { isSubscribed } from '../models/subscribe.js';
+import checkChannel from '../middleware/checkChannel.js';
 
 const router = express.Router();
 
@@ -19,12 +21,16 @@ router.post('/', useTry(async (req, res) => {
     return res.json({ success: false, error: 'Channel name is required!' });
   }
 
-  const channel = await ChannelModel.createChannel(req.userId, channelName);
+  let channel;
+  try {
+    channel = await ChannelModel.createChannel(req.userId, channelName);
+  } catch (err) {
+    return res.json({ success: false, error: "Channel already exists!" });
+  }
   await subscribeToChannel(req.userId, channel.channelId);
 
   res.json({
     success: true,
-    channelId: channel.channelId,
     channelName: channel.channelName,
     message: "You have been auto-subscribed to this channel"
   });
@@ -46,8 +52,7 @@ router.post('/messages', useTry(async (req, res) => {
 
   const messageId = uuid();
 
-  await MessageModel.createMessage(req.userId, messageId, message);
-
+  const channelIds = [];
   for (const channelName of uniqueChannelNames) {
     const channelId = await ChannelModel.getChannelIdByName(channelName);
     const channelExists = await ChannelModel.channelExists(channelId);
@@ -56,31 +61,37 @@ router.post('/messages', useTry(async (req, res) => {
       return res.json({ success: false, error: `Channel with name ${channelName} does not exist!` });
     }
 
-    await MessageModel.addMessageToChannel(channelId, messageId);
+    const isSubscribedToChannel = await isSubscribed(req.userId, channelId);
+
+    if (!isSubscribedToChannel) {
+      return res.json({ success: false, error: `You are not subscribed to channel ${channelName}!` });
+    }
+
+    channelIds.push(channelId);
   }
 
-  res.json({ success: true, messageId, message: "Message sent!" });
+  await MessageModel.createMessage(req.userId, messageId, message);
+
+  for (let i = 0; i < channelIds.length; i++) {
+    await MessageModel.addMessageToChannel(channelIds[i], messageId);
+  }
+
+  res.json({ success: true, message: "Message posted to channel(s)!" });
 }));
 
-
 // Get all messages from a channel
-router.get('/:channelName/messages', useTry(async (req, res) => {
-  const { channelName } = req.params;
+router.get('/:channelName/messages', checkChannel, useTry(async (req, res) => {
+  const { sort } = req.query;
 
-  if (!channelName) {
-    return res.json({ success: false, error: 'Channel name is required!' });
+  let order;
+  if (sort == 'oldest' || sort == 'newest') {
+    order = sort === 'oldest' ? 'ASC' : 'DESC';
   }
 
-  const channelId = await ChannelModel.getChannelIdByName(channelName);
-  const channelExists = await ChannelModel.channelExists(channelId);
-
-  if (!channelExists) {
-    return res.json({ success: false, error: `Channel with name ${channelName} does not exist!` });
-  }
-
-  const messages = await ChannelModel.getMessagesByChannelId(channelId);
+  const messages = await ChannelModel.getMessagesByChannelId(req.channelId, order);
 
   res.json({ success: true, messages });
 }));
 
 export default router;
+

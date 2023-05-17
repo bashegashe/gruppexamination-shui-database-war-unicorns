@@ -1,4 +1,5 @@
 import db from '../utils/db.js';
+import moment from 'moment';
 
 function createMessage(userId, messageId, message) {
   return new Promise((resolve, reject) => {
@@ -11,7 +12,7 @@ function createMessage(userId, messageId, message) {
       if (err) {
         reject(err);
       } else {
-        resolve(messageId);
+        resolve();
       }
     });
   });
@@ -34,7 +35,33 @@ function addMessageToChannel(channelId, messageId) {
   });
 }
 
+function getAllUserMessages(userId, order) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT message, sentDate
+      FROM messages
+      WHERE userId = ?
+      ORDER BY sentDate ${order};
+    `;
+
+    db.all(sql, [userId], (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (rows.length > 0) {
+          rows.forEach(row => {
+            row.sentDate = moment(row.sentDate).format('YY/MM/DD HH:mm:ss');
+          });
+        }
+
+        resolve(rows);
+      }
+    });
+  })
+}
+
 export default {
   createMessage,
   addMessageToChannel,
+  getAllUserMessages,
 }

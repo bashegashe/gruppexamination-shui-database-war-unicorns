@@ -57,14 +57,17 @@ function channelExists(channelId) {
   });
 }
 
-function getMessagesByChannelId(channelId) {
+function getMessagesByChannelId(channelId, order) {
+  if (!order) order = 'ASC';
+
   return new Promise((resolve, reject) => {
     const sql = `
-      SELECT messages.messageId, users.username, messages.message, messages.sentDate
+      SELECT users.username, messages.message, messages.sentDate
       FROM messages
       JOIN message_channels ON messages.messageId = message_channels.messageId
       JOIN users ON messages.userId = users.userId
-      WHERE channelId = ?;
+      WHERE message_channels.channelId = ?
+      ORDER BY messages.sentDate ${order};
     `;
 
     db.all(sql, [channelId], (err, rows) => {
