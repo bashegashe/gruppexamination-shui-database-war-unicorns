@@ -1,6 +1,6 @@
-import db from '../utils/db.js';
 import uuid from 'uuid-random';
 import moment from 'moment';
+import db from '../utils/db.js';
 
 function createChannel(ownerId, channelName) {
   return new Promise((resolve, reject) => {
@@ -11,7 +11,7 @@ function createChannel(ownerId, channelName) {
 
     const channelId = `cid-${uuid()}`;
 
-    db.run(sql, [channelId, ownerId, channelName], function (err) {
+    db.run(sql, [channelId, ownerId, channelName], (err) => {
       if (err) {
         reject(err);
       } else {
@@ -34,6 +34,24 @@ function getChannelIdByName(channelName) {
         reject(err);
       } else {
         resolve(row?.channelId);
+      }
+    });
+  });
+}
+
+function getChannelNameById(channelId) {
+  return new Promise((resolve, reject) => {
+    const sql = `
+      SELECT channelName
+      FROM channels
+      WHERE channelId = ?;
+    `;
+
+    db.get(sql, [channelId], (err, row) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(row?.channelName);
       }
     });
   });
@@ -75,7 +93,7 @@ function getMessagesByChannelId(channelId, order) {
         reject(err);
       } else {
         if (rows.length > 0) {
-          rows.forEach(row => {
+          rows.forEach((row) => {
             row.sentDate = moment(row.sentDate).format('YY/MM/DD HH:mm:ss');
           });
         }
@@ -91,4 +109,5 @@ export default {
   getChannelIdByName,
   channelExists,
   getMessagesByChannelId,
+  getChannelNameById,
 };

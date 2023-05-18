@@ -1,17 +1,11 @@
-import express from 'express';
 import jwt from 'jsonwebtoken';
-
-import useTry from '../utils/useTry.js';
-import UserModel from '../models/user.js';
 import { hashPassword, comparePassword } from '../utils/bcrypt.js';
-import checkAuth from '../middleware/checkAuth.js';
-import { subscribeToChannel } from '../models/subscribe.js';
-import ChannelModel from '../models/channel.js';
-import MessageModel from '../models/message.js';
+import UserModel from '../models/user.model.js';
+import SubscribeModel from '../models/subscribe.model.js';
+import ChannelModel from '../models/channel.model.js';
+import MessageModel from '../models/message.model.js';
 
-const router = express.Router();
-
-router.post('/register', useTry(async (req, res, next) => {
+async function register(req, res, next) {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -31,9 +25,9 @@ router.post('/register', useTry(async (req, res, next) => {
   }
 
   res.json({ success: true });
-}));
+}
 
-router.post('/login', useTry(async (req, res) => {
+async function login(req, res) {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -49,24 +43,23 @@ router.post('/login', useTry(async (req, res) => {
 
     res.json({ success: true, token });
   } else {
-    res.json({ success: false, message: "Incorrect username or password" });
+    res.json({ success: false, message: 'Incorrect username or password' });
   }
-}));
+}
 
-router.get('/logout', checkAuth, (req, res) => {
+function logout(req, res) {
   res.clearCookie('token');
 
-  res.json({ success: true });
-});
+  res.json({ success: true, message: 'You are now logged out' });
+}
 
-router.get('/status', checkAuth, useTry(async (req, res) => {
+async function status(req, res) {
   const user = await UserModel.getUserById(req.userId);
 
   res.json({ success: true, userId: req.userId, username: user.username });
-}));
+}
 
-// Subscribe to a channel
-router.post('/subscriptions/:channelName', checkAuth, useTry(async (req, res) => {
+async function subscribe(req, res) {
   const { channelName } = req.params;
 
   const channelId = await ChannelModel.getChannelIdByName(channelName);
@@ -76,7 +69,7 @@ router.post('/subscriptions/:channelName', checkAuth, useTry(async (req, res) =>
   }
 
   try {
-    await subscribeToChannel(req.userId, channelId);
+    await SubscribeModel.subscribeToChannel(req.userId, channelId);
   } catch (err) {
     if (err.code === 'SQLITE_CONSTRAINT') {
       return res.json({ success: false, error: 'You are already subscribed to this channel!' });
@@ -86,12 +79,12 @@ router.post('/subscriptions/:channelName', checkAuth, useTry(async (req, res) =>
   }
 
   res.json({ success: true, message: `You have been subscribed to ${channelName}` });
-}));
+}
 
-router.get('/messages', checkAuth, useTry(async (req, res) => {
+async function getMessages(req, res) {
   const { sort } = req.query;
 
-  if (sort != 'oldest' && sort != 'newest') {
+  if (sort !== 'oldest' && sort !== 'newest') {
     return res.json({ success: false, error: 'Invalid sort parameter!' });
   }
 
@@ -100,6 +93,31 @@ router.get('/messages', checkAuth, useTry(async (req, res) => {
   const messages = await MessageModel.getAllUserMessages(req.userId, order);
 
   res.json({ success: true, messages });
-}));
+}
 
-export default router;
+async function getSubscriptions(req, res) {
+  const channels = await UserModel.getSubscribedChannels(req.userId);
+
+  const channelNames = [];
+  for (const channel of channels) {
+    const channelName = await ChannelModel.getChannelNameById(channel.channelId);
+
+    channelNames.push(channelName);
+  }
+
+  res.json({
+    success: true,
+    message: channelNames.length > 0 ? 'You are subscribed to the following channel(s)' : 'You are not subscribed to any channels yet',
+    channels: channelNames.length > 0 ? channelNames : undefined,
+  });
+}
+
+export default {
+  register,
+  login,
+  logout,
+  status,
+  subscribe,
+  getMessages,
+  getSubscriptions,
+};

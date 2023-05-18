@@ -3,11 +3,11 @@ import db from '../utils/db.js';
 function subscribeToChannel(userId, channelId) {
   return new Promise((resolve, reject) => {
     const sql = `
-    INSERT INTO user_channels (userId, channelId)
-    VALUES (?, ?);
+      INSERT INTO user_channels (userId, channelId)
+      VALUES (?, ?);
     `;
 
-    db.run(sql, [userId, channelId], function (err) {
+    db.run(sql, [userId, channelId], (err) => {
       if (err) {
         reject(err);
       } else {
@@ -35,7 +35,7 @@ function isSubscribed(userId, channelId) {
   });
 }
 
-export {
+export default {
   subscribeToChannel,
   isSubscribed,
 };
