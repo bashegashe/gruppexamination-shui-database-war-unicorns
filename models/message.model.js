@@ -1,5 +1,5 @@
-import db from '../utils/db.js';
 import moment from 'moment';
+import db from '../utils/db.js';
 
 function createMessage(userId, messageId, message) {
   return new Promise((resolve, reject) => {
@@ -8,7 +8,7 @@ function createMessage(userId, messageId, message) {
       VALUES (?, ?, ?, ?);
     `;
 
-    db.run(sql, [messageId, userId, message, new Date()], function (err) {
+    db.run(sql, [messageId, userId, message, new Date()], (err) => {
       if (err) {
         reject(err);
       } else {
@@ -25,7 +25,7 @@ function addMessageToChannel(channelId, messageId) {
       VALUES (?, ?);
     `;
 
-    db.run(sql, [channelId, messageId], function (err) {
+    db.run(sql, [channelId, messageId], (err) => {
       if (err) {
         reject(err);
       } else {
@@ -49,7 +49,7 @@ function getAllUserMessages(userId, order) {
         reject(err);
       } else {
         if (rows.length > 0) {
-          rows.forEach(row => {
+          rows.forEach((row) => {
             row.sentDate = moment(row.sentDate).format('YY/MM/DD HH:mm:ss');
           });
         }
@@ -57,11 +57,11 @@ function getAllUserMessages(userId, order) {
         resolve(rows);
       }
     });
-  })
+  });
 }
 
 export default {
   createMessage,
   addMessageToChannel,
   getAllUserMessages,
-}
+};

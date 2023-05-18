@@ -7,8 +7,8 @@ import cookieParser from 'cookie-parser';
 import db from './utils/db.js';
 import { logErrors, errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
-import usersRoute from './routes/users.js';
-import channelsRoute from './routes/channels.js';
+import usersRoute from './routes/users.route.js';
+import channelsRoute from './routes/channels.route.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

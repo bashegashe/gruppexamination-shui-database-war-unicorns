@@ -1,4 +1,4 @@
-import ChannelModel from '../models/channel.js';
+import ChannelModel from '../models/channel.model.js';
 
 async function checkChannel(req, res, next) {
   const { channelName } = req.params;
